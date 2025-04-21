@@ -1,0 +1,59 @@
+;(function (h, o, u, n, d) {
+  h = h[d] = h[d] || {
+    q: [],
+    onReady: function (c) {
+      h.q.push(c)
+    },
+  }
+  d = o.createElement(u)
+  d.async = 1
+  d.src = n
+  n = o.getElementsByTagName(u)[0]
+  n.parentNode.insertBefore(d, n)
+})(
+  window,
+  document,
+  "script",
+  "https://www.datadoghq-browser-agent.com/us5/v5/datadog-rum.js",
+  "DD_RUM",
+)
+window.DD_RUM.onReady(function () {
+  var ignoredErrors = [
+    {
+      message: "ResizeObserver loop completed with undelivered notifications",
+      reportCount: 0,
+    },
+  ]
+  window.DD_RUM.init({
+    clientToken: "pubc889bfb741bf5b910f4652d3145cf517",
+    applicationId: "09639855-27d1-4f6e-a127-76bc720064a2",
+    // `site` refers to the Datadog site parameter of your organization
+    // see https://docs.datadoghq.com/getting_started/site/
+    site: "us5.datadoghq.com",
+    service: "frai-landing-page",
+    env: "production",
+    // Specify a version number to identify the deployed version of your application in Datadog
+    // version: '1.0.0',
+    sessionSampleRate: 0,
+    sessionReplaySampleRate: 0,
+    trackUserInteractions: false,
+    trackResources: false,
+    trackLongTasks: false,
+    defaultPrivacyLevel: "mask-user-input",
+    beforeSend: function (event, context) {
+      // discard a RUM error if its message includes 'profile is not defined'
+      if (event.type === "error") {
+        var error = ignoredErrors.find(function (err) {
+          return event.error.message.includes(err.message)
+        })
+        if (error) {
+          error.reportCount++
+          if (error.reportCount < 4) {
+            return false
+          }
+        }
+      }
+      return true
+    },
+  })
+})
